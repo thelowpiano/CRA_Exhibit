@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRA Opening Virtual Exhibit</title>
+    <!-- Import the Google Model Viewer script -->
+    <script type="module" src="https://googleapis.com"></script>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        model-viewer {
+            width: 80%;
+            height: 80vh;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Render the 3D model -->
+    <!-- REPLACE "____.glb" WITH YOUR ACTUAL MODEL FILENAME -->
+    <model-viewer 
+        src="personalized crotalus.glb" 
+        ar 
+        ar-modes="webxr scene-viewer quick-look" 
+        camera-controls 
+        poster="poster.webp" 
+        shadow-intensity="1" 
+        environment-image="neutral" 
+        auto-rotate>
+    </model-viewer>
+
+</body>
+</html>
