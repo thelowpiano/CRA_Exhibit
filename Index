@@ -27,9 +27,9 @@
 <body>
 
     <!-- Render the 3D model -->
-    <!-- REPLACE "robot.glb" WITH YOUR ACTUAL MODEL FILENAME -->
+    <!-- REPLACE "____.glb" WITH YOUR ACTUAL MODEL FILENAME -->
     <model-viewer 
-        src="robot.glb" 
+        src="personalized crotalus.glb" 
         ar 
         ar-modes="webxr scene-viewer quick-look" 
         camera-controls 
