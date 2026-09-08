@@ -35,11 +35,13 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            position: relative;
         }
         model-viewer {
             width: 100%;
             height: 350px;
             background-color: #ffffff;
+            position: relative;
         }
         .card-title {
             padding: 14px 16px;
@@ -90,8 +92,8 @@
                 environment-image="neutral"
                 auto-rotate>
                 <button slot="ar-button" class="ar-button">👋 View in AR</button>
-                <button class="fullscreen-button">⛶ Fullscreen</button>
             </model-viewer>
+            <button class="fullscreen-button">⛶ Fullscreen</button>
             <div class="card-title">Personalized Crotalus</div>
         </div>
 
@@ -106,8 +108,8 @@
                 environment-image="neutral"
                 auto-rotate>
                 <button slot="ar-button" class="ar-button">👋 View in AR</button>
-                <button class="fullscreen-button">⛶ Fullscreen</button>
             </model-viewer>
+            <button class="fullscreen-button">⛶ Fullscreen</button>
             <div class="card-title">Apple Corer</div>
         </div>
 
@@ -123,8 +125,8 @@
                 environment-image="neutral"
                 auto-rotate>
                 <button slot="ar-button" class="ar-button">👋 View in AR</button>
-                <button class="fullscreen-button">⛶ Fullscreen</button>
             </model-viewer>
+            <button class="fullscreen-button">⛶ Fullscreen</button>
             <div class="card-title">Another Model</div>
         </div>
         -->
@@ -134,7 +136,7 @@
     <script>
         document.querySelectorAll('.fullscreen-button').forEach((button) => {
             button.addEventListener('click', () => {
-                const viewer = button.closest('model-viewer');
+                const viewer = button.closest('.card').querySelector('model-viewer');
                 if (viewer.requestFullscreen) {
                     viewer.requestFullscreen();
                 } else if (viewer.webkitRequestFullscreen) {
