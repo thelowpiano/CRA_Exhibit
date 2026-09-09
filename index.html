@@ -68,14 +68,17 @@
                   }
         .hotspot[slot="hotspot-1"] {
                     --min-hotspot-opacity: 0;
-                    background-color: blue;
+                    background-color: red;
                   }
         .annotation {
                     background-color: #888888;
                     position: absolute;
-                    transform: translate(10px, 10px);
+                    transform: translate(-20px, -200px);
                     border-radius: 10px;
                     padding: 10px;
+                  }
+        model-viewer > .annotation {
+                    transform: translate(10px, 10px);
                   }
         .ar-button,
         .fullscreen-button {
