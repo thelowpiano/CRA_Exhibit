@@ -99,9 +99,17 @@
         .fullscreen-button {
             left: 16px;
         }
-        model-viewer:fullscreen {
-            height: 100vh;
-            --poster-color: transparent;
+       model-viewer.fullscreen-active {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 9999;
+            border-radius: 0;
+        }
+        .card.card-fullscreen-active {
+            overflow: visible;
         }
     </style>
 </head>
@@ -170,17 +178,45 @@
 
     </div>
 
-    <script>
+   <script>
+        function enterFullscreen(card, viewer, button) {
+            viewer.classList.add('fullscreen-active');
+            card.classList.add('card-fullscreen-active');
+            button.classList.add('exit-mode');
+            button.textContent = '✕ Exit Fullscreen';
+            document.body.classList.add('no-scroll');
+        }
+ 
+        function exitFullscreen(card, viewer, button) {
+            viewer.classList.remove('fullscreen-active');
+            card.classList.remove('card-fullscreen-active');
+            button.classList.remove('exit-mode');
+            button.textContent = '⛶ Fullscreen';
+            document.body.classList.remove('no-scroll');
+        }
+ 
         document.querySelectorAll('.fullscreen-button').forEach((button) => {
             button.addEventListener('click', () => {
-                const viewer = button.closest('.card').querySelector('model-viewer');
-                if (viewer.requestFullscreen) {
-                    viewer.requestFullscreen();
-                } else if (viewer.webkitRequestFullscreen) {
-                    viewer.webkitRequestFullscreen(); // Safari/iOS fallback
+                const card = button.closest('.card');
+                const viewer = card.querySelector('model-viewer');
+                if (viewer.classList.contains('fullscreen-active')) {
+                    exitFullscreen(card, viewer, button);
+                } else {
+                    enterFullscreen(card, viewer, button);
                 }
             });
         });
+ 
+        // Let desktop users press Escape to exit too
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            document.querySelectorAll('model-viewer.fullscreen-active').forEach((viewer) => {
+                const card = viewer.closest('.card');
+                const button = card.querySelector('.fullscreen-button');
+                exitFullscreen(card, viewer, button);
+            });
+        });
+    </script>
     </script>
 
 </body>
