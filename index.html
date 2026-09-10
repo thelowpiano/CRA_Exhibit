@@ -195,6 +195,15 @@
                 viewer.setAttribute('reveal', 'interaction');
             });
         }
+                       viewer.addEventListener('poster-dismissed', () => {
+                    viewers.forEach((other) => {
+                        if (other !== viewer) {
+                            other.showPoster();
+                        }
+                    });
+                });
+            });
+        }
        
         function enterFullscreen(card, viewer, button) {
             if (typeof viewer.dismissPoster === 'function') {
