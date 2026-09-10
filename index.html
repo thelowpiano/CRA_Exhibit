@@ -201,6 +201,10 @@
             const viewers = document.querySelectorAll('model-viewer');
             viewers.forEach((viewer) => {
                 viewer.setAttribute('reveal', 'interaction');
+
+                viewer.addEventListener('click', () => {
+                    viewer.dismissPoster();
+                });
  
                 // When this model gets revealed — whether by the user
                 // tapping its poster directly, or via dismissPoster()
