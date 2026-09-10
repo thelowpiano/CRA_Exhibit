@@ -191,93 +191,115 @@
     <script>
         // Only require a tap-to-load interaction on phones. That's where
         // GPU memory is tight enough that loading multiple full-size
-        // models at once can crash the page (see the iPhone crash fix).
-        // Desktops and tablets get the smoother auto-load behavior.
-        // This runs before the model-viewer module script finishes
-        // loading, so the attribute is in place before models start
-        // fetching.
+        // models at once can crash the page.
         const isPhone = /Mobi/i.test(navigator.userAgent);
  
-        // Reveals a model, restoring its src first if it was cleared to
-        // free memory (see below). Safe to call even if already revealed.
-        function revealModel(viewer) {
-            if (!viewer.getAttribute('src') && viewer.dataset.originalSrc) {
-                viewer.setAttribute('src', viewer.dataset.originalSrc);
+        // One entry per card, tracking what's needed to tear down and
+        // rebuild that card's <model-viewer> on demand.
+        const viewerEntries = [];
+ 
+        function currentViewer(entry) {
+            return entry.card.querySelector('model-viewer');
+        }
+ 
+        function attachViewerListeners(viewer, entry) {
+            viewer.addEventListener('click', () => revealViewer(entry));
+            if (isPhone) {
+                // When this model is revealed, tear down every other
+                // model on the page.
+                viewer.addEventListener('poster-dismissed', () => {
+                    viewerEntries.forEach((other) => {
+                        if (other !== entry) teardownViewer(other);
+                    });
+                });
+            }
+        }
+ 
+        // Fully removes the <model-viewer> element (not just its src)
+        // and swaps in a lightweight poster placeholder. This matters
+        // because clearing src alone frees the loaded model data, but
+        // the element's WebGL context stays alive as long as the
+        // element itself stays in the DOM — with several models on the
+        // page, that's baseline GPU memory that adds up and can still
+        // crash the page occasionally, especially when switching
+        // between models quickly. Removing the element entirely
+        // releases its WebGL context along with everything else.
+        function teardownViewer(entry) {
+            if (!isPhone) return;
+            const viewer = currentViewer(entry);
+            if (!viewer) return; // already torn down
+ 
+            const placeholder = document.createElement('div');
+            placeholder.className = 'model-viewer-placeholder';
+            if (entry.posterSrc) {
+                placeholder.style.backgroundImage = `url("${entry.posterSrc}")`;
+            }
+            const hint = document.createElement('span');
+            hint.textContent = 'Tap to view in 3D';
+            placeholder.appendChild(hint);
+            placeholder.addEventListener('click', () => revealViewer(entry));
+            entry.card.replaceChild(placeholder, viewer);
+        }
+ 
+        // Rebuilds the <model-viewer> from its original markup if it was
+        // torn down, then reveals it. Returns the live element either way.
+        function revealViewer(entry) {
+            let viewer = currentViewer(entry);
+            if (!viewer) {
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = entry.template;
+                viewer = wrapper.firstElementChild;
+                const placeholder = entry.card.querySelector('.model-viewer-placeholder');
+                entry.card.replaceChild(viewer, placeholder);
+                attachViewerListeners(viewer, entry);
             }
             if (typeof viewer.dismissPoster === 'function') {
                 viewer.dismissPoster();
             }
+            return viewer;
         }
  
-        if (isPhone) {
-            const viewers = document.querySelectorAll('model-viewer');
-            viewers.forEach((viewer) => {
-                // Remember the real src so it can be restored after we
-                // clear it below to free memory.
-                viewer.dataset.originalSrc = viewer.getAttribute('src');
+        document.querySelectorAll('.card').forEach((card) => {
+            const viewer = card.querySelector('model-viewer');
+            if (isPhone) {
                 viewer.setAttribute('reveal', 'interaction');
+            }
+            const entry = {
+                card,
+                template: viewer.outerHTML,
+                posterSrc: viewer.getAttribute('poster') || '',
+            };
+            viewerEntries.push(entry);
+            attachViewerListeners(viewer, entry);
+        });
  
-                // Explicitly dismiss the poster on tap rather than relying
-                // on model-viewer's built-in poster click handling — that
-                // built-in behavior can be unreliable, especially on cards
-                // without a poster image set.
-                viewer.addEventListener('click', () => {
-                    revealModel(viewer);
-                });
- 
-                // When this model gets revealed — whether by the tap
-                // handler above, or via revealModel() in enterFullscreen()
-                // below — put every other model's poster back AND clear
-                // its src. showPoster() alone only hides the model
-                // visually; it does not release the loaded GLTF data,
-                // textures, or GPU buffers, so repeatedly switching
-                // between models without this step keeps accumulating
-                // memory until the page eventually crashes anyway.
-                // Clearing src makes model-viewer actually dispose the
-                // loaded scene; the src is restored from dataset above
-                // the next time that model is tapped.
-                viewer.addEventListener('poster-dismissed', () => {
-                    viewers.forEach((other) => {
-                        if (other !== viewer) {
-                            other.showPoster();
-                            other.removeAttribute('src');
-                        }
-                    });
-                });
-            });
-        }
- 
-        function enterFullscreen(card, viewer, button) {
-            // On phones, models use reveal="interaction" and may have
-            // their src cleared to save memory (see above). This restores
-            // the src if needed and reveals the model — clicking our
-            // custom fullscreen button doesn't trigger model-viewer's own
-            // poster-tap handling, so without this the model would stay
-            // hidden (or missing entirely) in fullscreen.
-            revealModel(viewer);
+        function enterFullscreen(entry, button) {
+            const viewer = revealViewer(entry);
             viewer.classList.add('fullscreen-active');
-            card.classList.add('card-fullscreen-active');
+            entry.card.classList.add('card-fullscreen-active');
             button.classList.add('exit-mode');
             button.textContent = '✕ Exit Fullscreen';
             document.body.classList.add('no-scroll');
         }
  
-        function exitFullscreen(card, viewer, button) {
-            viewer.classList.remove('fullscreen-active');
-            card.classList.remove('card-fullscreen-active');
+        function exitFullscreen(entry, button) {
+            const viewer = currentViewer(entry);
+            if (viewer) viewer.classList.remove('fullscreen-active');
+            entry.card.classList.remove('card-fullscreen-active');
             button.classList.remove('exit-mode');
             button.textContent = '⛶ Fullscreen';
             document.body.classList.remove('no-scroll');
         }
  
         document.querySelectorAll('.fullscreen-button').forEach((button) => {
+            const card = button.closest('.card');
+            const entry = viewerEntries.find((e) => e.card === card);
             button.addEventListener('click', () => {
-                const card = button.closest('.card');
-                const viewer = card.querySelector('model-viewer');
-                if (viewer.classList.contains('fullscreen-active')) {
-                    exitFullscreen(card, viewer, button);
+                const viewer = currentViewer(entry);
+                if (viewer && viewer.classList.contains('fullscreen-active')) {
+                    exitFullscreen(entry, button);
                 } else {
-                    enterFullscreen(card, viewer, button);
+                    enterFullscreen(entry, button);
                 }
             });
         });
@@ -287,12 +309,13 @@
             if (event.key !== 'Escape') return;
             document.querySelectorAll('model-viewer.fullscreen-active').forEach((viewer) => {
                 const card = viewer.closest('.card');
+                const entry = viewerEntries.find((e) => e.card === card);
                 const button = card.querySelector('.fullscreen-button');
-                exitFullscreen(card, viewer, button);
+                exitFullscreen(entry, button);
             });
         });
-    </script>
- 
+    </script> 
+    
 </body>
 </html>
  
