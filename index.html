@@ -188,7 +188,7 @@
 
     </div>
 
-    <script>
+<script>
         // Only require a tap-to-load interaction on phones. That's where
         // GPU memory is tight enough that loading multiple full-size
         // models at once can crash the page.
@@ -232,7 +232,10 @@
             const placeholder = document.createElement('div');
             placeholder.className = 'model-viewer-placeholder';
             if (entry.posterSrc) {
-                placeholder.style.backgroundImage = `url("${entry.posterSrc}")`;
+                const img = document.createElement('img');
+                img.src = entry.posterSrc;
+                img.alt = '';
+                placeholder.appendChild(img);
             }
             const hint = document.createElement('span');
             hint.textContent = 'Tap to view in 3D';
@@ -314,8 +317,8 @@
                 exitFullscreen(entry, button);
             });
         });
-    </script> 
-    
+    </script>
+ 
 </body>
 </html>
  
