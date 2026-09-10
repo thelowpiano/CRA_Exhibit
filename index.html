@@ -180,6 +180,13 @@
     </div>
 
    <script>
+        const isPhone = /Mobi/i.test(navigator.userAgent);
+        if (isPhone) {
+            document.querySelectorAll('model-viewer').forEach((viewer) => {
+                viewer.setAttribute('reveal', 'interaction');
+            });
+        }
+       
         function enterFullscreen(card, viewer, button) {
             viewer.classList.add('fullscreen-active');
             card.classList.add('card-fullscreen-active');
