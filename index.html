@@ -197,25 +197,50 @@
         // loading, so the attribute is in place before models start
         // fetching.
         const isPhone = /Mobi/i.test(navigator.userAgent);
+ 
+        // Reveals a model, restoring its src first if it was cleared to
+        // free memory (see below). Safe to call even if already revealed.
+        function revealModel(viewer) {
+            if (!viewer.getAttribute('src') && viewer.dataset.originalSrc) {
+                viewer.setAttribute('src', viewer.dataset.originalSrc);
+            }
+            if (typeof viewer.dismissPoster === 'function') {
+                viewer.dismissPoster();
+            }
+        }
+ 
         if (isPhone) {
             const viewers = document.querySelectorAll('model-viewer');
             viewers.forEach((viewer) => {
+                // Remember the real src so it can be restored after we
+                // clear it below to free memory.
+                viewer.dataset.originalSrc = viewer.getAttribute('src');
                 viewer.setAttribute('reveal', 'interaction');
-
+ 
+                // Explicitly dismiss the poster on tap rather than relying
+                // on model-viewer's built-in poster click handling — that
+                // built-in behavior can be unreliable, especially on cards
+                // without a poster image set.
                 viewer.addEventListener('click', () => {
-                    viewer.dismissPoster();
+                    revealModel(viewer);
                 });
  
-                // When this model gets revealed — whether by the user
-                // tapping its poster directly, or via dismissPoster()
-                // in enterFullscreen() below — put every other model's
-                // poster back. This keeps at most one model loaded/
-                // rendering at a time on phones, which is what avoids
-                // the GPU-memory crash from before.
+                // When this model gets revealed — whether by the tap
+                // handler above, or via revealModel() in enterFullscreen()
+                // below — put every other model's poster back AND clear
+                // its src. showPoster() alone only hides the model
+                // visually; it does not release the loaded GLTF data,
+                // textures, or GPU buffers, so repeatedly switching
+                // between models without this step keeps accumulating
+                // memory until the page eventually crashes anyway.
+                // Clearing src makes model-viewer actually dispose the
+                // loaded scene; the src is restored from dataset above
+                // the next time that model is tapped.
                 viewer.addEventListener('poster-dismissed', () => {
                     viewers.forEach((other) => {
                         if (other !== viewer) {
                             other.showPoster();
+                            other.removeAttribute('src');
                         }
                     });
                 });
@@ -223,15 +248,13 @@
         }
  
         function enterFullscreen(card, viewer, button) {
-            // On phones, models use reveal="interaction" and don't load
-            // until the poster is tapped. Clicking our custom fullscreen
-            // button doesn't count as that interaction (it's not part of
-            // the model-viewer's own poster), so without this the model
-            // would stay hidden behind its poster in fullscreen. This
-            // triggers the same reveal manually.
-            if (typeof viewer.dismissPoster === 'function') {
-                viewer.dismissPoster();
-            }
+            // On phones, models use reveal="interaction" and may have
+            // their src cleared to save memory (see above). This restores
+            // the src if needed and reveals the model — clicking our
+            // custom fullscreen button doesn't trigger model-viewer's own
+            // poster-tap handling, so without this the model would stay
+            // hidden (or missing entirely) in fullscreen.
+            revealModel(viewer);
             viewer.classList.add('fullscreen-active');
             card.classList.add('card-fullscreen-active');
             button.classList.add('exit-mode');
