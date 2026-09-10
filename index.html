@@ -112,6 +112,15 @@
         .card.card-fullscreen-active {
             overflow: visible;
         }
+        body.no-scroll {
+            overflow: hidden;
+        }
+        .fullscreen-button.exit-mode {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 10000;
+        }
     </style>
 </head>
 <body>
@@ -188,6 +197,9 @@
         }
        
         function enterFullscreen(card, viewer, button) {
+            if (typeof viewer.dismissPoster === 'function') {
+                viewer.dismissPoster();
+            }
             viewer.classList.add('fullscreen-active');
             card.classList.add('card-fullscreen-active');
             button.classList.add('exit-mode');
