@@ -121,6 +121,34 @@
             left: 16px;
             z-index: 10000;
         }
+                .model-viewer-placeholder {
+            position: relative;
+            width: 100%;
+            height: 350px;
+            background-color: #eaeaea;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .model-viewer-placeholder img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+        }
+        .model-viewer-placeholder span {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            color: #222;
+        }
     </style>
 </head>
 <body>
