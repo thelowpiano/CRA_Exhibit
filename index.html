@@ -188,14 +188,27 @@
 
     </div>
 
-   <script>
+    <script>
+        // Only require a tap-to-load interaction on phones. That's where
+        // GPU memory is tight enough that loading multiple full-size
+        // models at once can crash the page (see the iPhone crash fix).
+        // Desktops and tablets get the smoother auto-load behavior.
+        // This runs before the model-viewer module script finishes
+        // loading, so the attribute is in place before models start
+        // fetching.
         const isPhone = /Mobi/i.test(navigator.userAgent);
         if (isPhone) {
-            document.querySelectorAll('model-viewer').forEach((viewer) => {
+            const viewers = document.querySelectorAll('model-viewer');
+            viewers.forEach((viewer) => {
                 viewer.setAttribute('reveal', 'interaction');
-            });
-        }
-                       viewer.addEventListener('poster-dismissed', () => {
+ 
+                // When this model gets revealed — whether by the user
+                // tapping its poster directly, or via dismissPoster()
+                // in enterFullscreen() below — put every other model's
+                // poster back. This keeps at most one model loaded/
+                // rendering at a time on phones, which is what avoids
+                // the GPU-memory crash from before.
+                viewer.addEventListener('poster-dismissed', () => {
                     viewers.forEach((other) => {
                         if (other !== viewer) {
                             other.showPoster();
@@ -204,8 +217,14 @@
                 });
             });
         }
-       
+ 
         function enterFullscreen(card, viewer, button) {
+            // On phones, models use reveal="interaction" and don't load
+            // until the poster is tapped. Clicking our custom fullscreen
+            // button doesn't count as that interaction (it's not part of
+            // the model-viewer's own poster), so without this the model
+            // would stay hidden behind its poster in fullscreen. This
+            // triggers the same reveal manually.
             if (typeof viewer.dismissPoster === 'function') {
                 viewer.dismissPoster();
             }
@@ -246,7 +265,7 @@
             });
         });
     </script>
-    </script>
-
+ 
 </body>
 </html>
+ 
